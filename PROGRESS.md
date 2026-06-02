@@ -172,3 +172,22 @@
 **자동 게이트 결과**: `typecheck` 0 · `lint` 0 · `test` 0(**58 passed**: +webcam 5, Onboarding 7, HUD 4) · `build` 0. 번들 1,303KB(gzip 361KB).
 
 **최종 테스트로 미룬 항목 (Phase 5, 사람·카메라/시각)**: 주먹→흩뿌리기 연출, Bloom on/off 시각/프레임 회복, 권한 거부 안내 실제 표시, 30fps. → preview/온보딩은 지금 라이브에서 확인 가능.
+
+---
+
+## 릴리스 전 다중 에이전트 코드 리뷰 (Phase 5 직전)
+
+5개 차원(제스처 수학·R3F/three·React 파이프라인·배포/경로·UI) 병렬 리뷰 + 적대적 검증(11 에이전트). 확정 5건을 **적용 전 직접 재검증** → 진짜 3건 수정, 2건 오탐 기각.
+
+**수정한 진짜 버그**
+
+1. **rotation One Euro ±π wrap**(`smoothing.ts`): 각도를 스칼라로 필터링하면 ±π 경계에서 ~2π 점프를 큰 속도로 오인 → 떨림/오버슈트. **sin/cos를 각각 필터링 후 atan2로 복원**하도록 변경(경계 연속). 회귀 테스트 추가(`smoothing.test.ts`: wrap 시 연속성, 정상 수렴).
+2. **셰이더 노멀 이중 변환**(`petalMaterial.ts`): `mat3(instance)*normal` 후 `normalMatrix` 적용이 비균일 인스턴스 스케일(꽃잎 scale.z≈0)에서 노멀을 왜곡 → 프레넬 rim 오류. three의 `<defaultnormal_vertex>`식 **역스케일 보정 후 회전**으로 수정.
+3. **온보딩 모델 에러 누락**(`onboardingPhase.ts`): cam=ready·model=error일 때 intro로 빠져 사용자가 깨진 상태를 모름. error 분기에 `model==='error'` 추가. 회귀 테스트 추가.
+
+**오탐(기각, 근거 기록)**
+
+4. "rotation이 비미러 공간" 주장 — 실제 `vx = x0 - x9`는 §9.5의 미러 공식 `(1-x9)-(1-x0) = x0-x9`와 **대수적으로 동일**. 이미 미러 적용됨. 추가 반전 시 이중 미러가 되어 오히려 틀림 → 변경 안 함(부호 최종 확인은 §8 진단대로 Phase 5 카메라 테스트).
+5. "셰이더 uniform 색상 GPU 미동기화" — ShaderMaterial은 매 프레임 uniform을 업로드(모든 uTime 애니메이션이 의존). in-place `lerpColors`는 그대로 반영됨. 방어용 `uniformsNeedUpdate` 시도는 컴파일러 immutability 규칙과 충돌 + 불필요 → 미적용.
+
+**검증**: `typecheck` 0 · `lint` 0 · `test` 0(**62 passed**, +smoothing 3, +onboarding model-error 1) · `build` 0. 헤드리스 재렌더 3종 에러 0, rim 라이팅 정상.

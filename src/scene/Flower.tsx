@@ -151,7 +151,8 @@ export function Flower() {
     }
     petals.instanceMatrix.needsUpdate = true
 
-    // petal colors lerp from→to
+    // Petal colors lerp from→to. In-place Color mutation is picked up by three's
+    // per-frame ShaderMaterial uniform upload (same as any uTime animation).
     ;(petalMat.uniforms.uBase.value as Color).lerpColors(colors[from].base, colors[to].base, t)
     ;(petalMat.uniforms.uTip.value as Color).lerpColors(colors[from].tip, colors[to].tip, t)
     ;(petalMat.uniforms.uRim.value as Color).lerpColors(colors[from].rim, colors[to].rim, t)

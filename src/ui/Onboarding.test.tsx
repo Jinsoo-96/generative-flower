@@ -16,6 +16,10 @@ describe('onboardingPhase', () => {
     expect(onboardingPhase('unsupported', 'ready')).toBe('error')
     expect(onboardingPhase('error', 'ready')).toBe('error')
   })
+  it('error when the model fails to load even if the camera is ready (review fix #5)', () => {
+    expect(onboardingPhase('ready', 'error')).toBe('error')
+    expect(onboardingPhase('idle', 'error')).toBe('error')
+  })
   it('loading while starting', () => {
     expect(onboardingPhase('starting', 'loading')).toBe('loading')
   })

@@ -6,7 +6,8 @@ export type OnboardingPhaseName = 'intro' | 'loading' | 'error' | 'hidden'
 /** Which onboarding state to show for the given camera + model status. */
 export function onboardingPhase(cam: WebcamStatus, model: LandmarkerStatus): OnboardingPhaseName {
   if (cam === 'ready' && model === 'ready') return 'hidden'
-  if (cam === 'denied' || cam === 'unsupported' || cam === 'error') return 'error'
+  // Any camera failure OR a model load failure surfaces the error fallback.
+  if (cam === 'denied' || cam === 'unsupported' || cam === 'error' || model === 'error') return 'error'
   if (cam === 'starting' || (cam === 'ready' && model === 'loading')) return 'loading'
   return 'intro'
 }

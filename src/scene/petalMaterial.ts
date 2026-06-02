@@ -27,11 +27,17 @@ const vertexShader = /* glsl */ `
   void main() {
     vUv = uv;
     mat4 instance = mat4(1.0);
+    vec3 objNormal = normal;
     #ifdef USE_INSTANCING
       instance = instanceMatrix;
+      // Normal under per-instance transform: divide out the (possibly
+      // non-uniform) instance scale, then rotate — matches three's
+      // <defaultnormal_vertex> instancing. Petals use non-uniform scale.
+      mat3 im = mat3(instanceMatrix);
+      objNormal /= vec3(dot(im[0], im[0]), dot(im[1], im[1]), dot(im[2], im[2]));
+      objNormal = im * objNormal;
     #endif
     vec3 transformed = (instance * vec4(position, 1.0)).xyz;
-    vec3 objNormal = mat3(instance) * normal;
     vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
     vPosV = mvPosition.xyz;
     vNormalV = normalize(normalMatrix * objNormal);
