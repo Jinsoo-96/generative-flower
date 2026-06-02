@@ -71,3 +71,30 @@
 **자동 게이트 결과**: `typecheck` 0 · `lint` 0 · `test` 0(7 passed) · `build` 0. 번들 331KB(gzip 102KB, MediaPipe JS 래퍼 포함; WASM은 런타임 CDN 로드).
 
 **최종 테스트로 미룬 항목 (Phase 5, 사람·카메라)**: 카메라 권한 프롬프트 동작, 영상 셀피 미러링, 손 따라 21점/골격이 올바른 방향으로 그려지는지(왼손=화면 왼쪽). → **단, 사용자가 라이브 URL에서 “카메라 시작”으로 지금이라도 직접 확인 가능.**
+
+---
+
+## Phase 1 — Three.js 기반 & 좌표 매핑
+
+**한 일**
+
+- `src/lib/math.ts`: `clamp01`/`clamp`/`lerp`/`invLerp`/`smoothstep` 순수 유틸.
+- `src/config.ts`: `CAMERA`(fov 50, z=5), `FLOWER_PLANE_DISTANCE`, `DEPTH`(nearMin/Max), `FLOWER`(scale range), `MOTION`(lerp 계수). 튜닝값은 최종 카메라 테스트에서 보정.
+- `src/gestures/types.ts`: `GestureState` 계약(§3) + `defaultGestureState()`.
+- `src/scene/mapping.ts`: `frustumHalfExtents`/`normalizedToWorld`(§9.1, y-flip)/`depthToScale`(§9.2). 
+- `src/scene/mapping.test.ts`: 합성 단위 테스트 8개 — 중앙→원점, y 반전, mirror∘mapping 방향(손 좌→월드 +x), aspect 스케일, depth→scale 클램프.
+- `src/gestures/extract.ts`(Phase 1 부분): `palmCenter`(0·5·9·17 평균)·`handScale`(0–9)·`depthFromHandScale`·`extractGesture`(position 미러링 + depth). bloom/fingerCount/rotation/isFist는 Phase 2.
+- `src/tracking/trackingContext.ts` + `TrackingProvider.tsx`: 단일 웹캠+랜드마커 소스, `gestureRef`(mutable)·`lastResultRef` 제공. onResults에서 extractGesture → gestureRef 갱신(매 프레임 state 미사용).
+- `src/ui/DebugOverlay.tsx`: 공유 컨텍스트 소비형 PiP(자체 rAF 드로잉)로 리팩터.
+- `src/scene/Flower.tsx`: placeholder 꽃(코어 구 + 꽃잎 5장), useFrame에서 gestureRef→world 위치/스케일 lerp.
+- `src/scene/Stage.tsx`: `<Canvas>` + perspective 카메라 + 어두운 ambient/key 라이트(§11 톤 프리뷰). `App.tsx`: TrackingProvider→Scene(Stage + PiP + 시작 카드).
+
+**결정 기록 (비자명한 선택)**
+
+- context/hook을 `trackingContext.ts`로 분리 → Provider 파일은 컴포넌트만 export(`react-refresh/only-export-components` 충족).
+- React 19 context-as-provider 문법(`<TrackingContext value=…>`) 사용.
+- 카메라 시작 전에도 placeholder 꽃이 중앙에 정적으로 보이게(미감 프리뷰 겸용).
+
+**자동 게이트 결과**: `typecheck` 0 · `lint` 0 · `test` 0(15 passed: landmarks 7 + mapping 8) · `build` 0. 번들 1,215KB(gzip 338KB) → `>500KB 청크` 경고(비차단; three+R3F+MediaPipe). 추후 동적 import 코드분할 검토(백로그).
+
+**최종 테스트로 미룬 항목 (Phase 5, 사람·카메라)**: 실제 손 이동 시 꽃이 시각적으로 일치하게 따라옴(좌우/상하), 손 가까이→꽃 커짐. → 사용자가 라이브 URL에서 지금 직접 확인 가능.

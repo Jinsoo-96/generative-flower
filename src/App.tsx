@@ -1,20 +1,47 @@
 import './styles.css'
+import { TrackingProvider } from './tracking/TrackingProvider'
+import { useTracking } from './tracking/trackingContext'
+import { Stage } from './scene/Stage'
 import { DebugOverlay } from './ui/DebugOverlay'
 
 /**
- * Phase 0-B: webcam + MediaPipe hand-landmark debug overlay.
- * The R3F flower scene replaces this in Phase 1+. The debug view is kept
- * (later behind a toggle) so tracking can be eyeballed from the live URL.
+ * Phase 1: R3F flower scene driven by the shared gestureRef, with the webcam
+ * landmark debug overlay kept as a small PiP. A minimal start card requests
+ * the camera (full onboarding/HUD arrive in Phase 4).
  */
+function Scene() {
+  const { camStatus, modelStatus, camError, modelError, start } = useTracking()
+  const started = camStatus === 'starting' || camStatus === 'ready'
+
+  return (
+    <main className="app-stage">
+      <Stage />
+      <DebugOverlay className="pip" />
+
+      {!started && (
+        <div className="start-card">
+          <h1>🌸 Generative Flower</h1>
+          <p>손동작 기반 제너러티브 꽃 미디어아트</p>
+          <button type="button" onClick={start}>
+            카메라 시작
+          </button>
+          <p className="muted">
+            cam: {camStatus} · model: {modelStatus}
+          </p>
+          {(camError || modelError) && (
+            <p className="debug-error">{camError ?? modelError}</p>
+          )}
+        </div>
+      )}
+    </main>
+  )
+}
+
 function App() {
   return (
-    <main className="app">
-      <header className="app-title">
-        <h1>🌸 Generative Flower</h1>
-        <p className="muted">Phase 0-B · 손 인식 디버그 — “카메라 시작”을 눌러 손을 비춰보세요</p>
-      </header>
-      <DebugOverlay />
-    </main>
+    <TrackingProvider>
+      <Scene />
+    </TrackingProvider>
   )
 }
 

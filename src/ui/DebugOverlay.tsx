@@ -1,26 +1,24 @@
-import { useCallback, useRef } from 'react'
-import type { HandLandmarkerResult } from '@mediapipe/tasks-vision'
-import { useWebcam } from '../tracking/useWebcam'
-import { useHandLandmarker } from '../tracking/useHandLandmarker'
+import { useEffect, useRef } from 'react'
+import { useTracking } from '../tracking/trackingContext'
 import { HAND_CONNECTIONS, toCanvasPoint } from '../tracking/landmarks'
 
 /**
- * Phase 0-B debug view: webcam <video> (CSS-mirrored, selfie) with a <canvas>
- * overlay drawing the 21 landmarks + skeleton. The canvas is NOT CSS-mirrored;
- * we flip x in `toCanvasPoint` instead (DEV_PLAN §8) so points land on the hand.
- *
- * Per DEV_PLAN principle 2, the camera is not auto-tested during development —
- * this view exists so a human can verify tracking from the live URL whenever
- * they want (start button → permission prompt on user gesture).
+ * Presentational debug PiP: the shared webcam <video> (CSS-mirrored, selfie)
+ * with a <canvas> overlay drawing the 21 landmarks + skeleton from the shared
+ * latest result. The canvas is NOT mirrored; x is flipped in toCanvasPoint
+ * (DEV_PLAN §8). Owns no tracking — reads videoRef + lastResultRef from context.
  */
-export function DebugOverlay() {
-  const { videoRef, status: camStatus, error: camError, start } = useWebcam()
+export function DebugOverlay({ className = '' }: { className?: string }) {
+  const { videoRef, lastResultRef } = useTracking()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
-  const draw = useCallback(
-    (result: HandLandmarkerResult, video: HTMLVideoElement) => {
+  useEffect(() => {
+    let raf = 0
+    const loop = () => {
+      raf = requestAnimationFrame(loop)
       const canvas = canvasRef.current
-      if (!canvas) return
+      const video = videoRef.current
+      if (!canvas || !video) return
       const w = video.videoWidth || 640
       const h = video.videoHeight || 480
       if (canvas.width !== w) canvas.width = w
@@ -29,6 +27,8 @@ export function DebugOverlay() {
       if (!ctx) return
 
       ctx.clearRect(0, 0, w, h)
+      const result = lastResultRef.current
+      if (!result) return
       for (const lms of result.landmarks) {
         ctx.strokeStyle = '#7afcff'
         ctx.lineWidth = 2
@@ -44,42 +44,19 @@ export function DebugOverlay() {
         for (const lm of lms) {
           const p = toCanvasPoint(lm, w, h)
           ctx.beginPath()
-          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2)
+          ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
           ctx.fill()
         }
       }
-    },
-    [],
-  )
-
-  const { status: hlStatus, error: hlError } = useHandLandmarker({
-    videoRef,
-    enabled: camStatus === 'ready',
-    onResults: draw,
-  })
-
-  const showStart = camStatus === 'idle' || camStatus === 'denied' || camStatus === 'error'
+    }
+    raf = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(raf)
+  }, [videoRef, lastResultRef])
 
   return (
-    <div className="debug-stage">
-      <div className="debug-frame">
-        <video ref={videoRef} autoPlay muted playsInline className="debug-video" />
-        <canvas ref={canvasRef} className="debug-canvas" />
-      </div>
-
-      <div className="debug-hud">
-        <span>cam: {camStatus}</span>
-        <span>model: {hlStatus}</span>
-        {showStart && (
-          <button type="button" onClick={() => void start()}>
-            카메라 시작
-          </button>
-        )}
-      </div>
-
-      {(camError || hlError) && (
-        <p className="debug-error">{camError ?? hlError}</p>
-      )}
+    <div className={`debug-pip ${className}`.trim()}>
+      <video ref={videoRef} autoPlay muted playsInline className="debug-video" />
+      <canvas ref={canvasRef} className="debug-canvas" />
     </div>
   )
 }
