@@ -22,32 +22,92 @@ body {
   color: #dcccff;
 }
 
-.boot {
+.app {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
-  gap: 0.4rem;
-  text-align: center;
+  gap: 1rem;
   padding: 1rem;
 }
 
-.boot h1 {
+.app-title {
+  text-align: center;
+}
+
+.app-title h1 {
   font-weight: 300;
-  font-size: clamp(1.6rem, 5vw, 2.6rem);
-  margin: 0;
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
+  margin: 0 0 0.3rem;
   letter-spacing: 0.02em;
 }
 
-.boot p {
+.muted {
+  font-size: 0.85rem;
+  color: #6a4cff;
   margin: 0;
-  font-weight: 300;
+}
+
+/* ── Debug overlay (Phase 0-B) ───────────────────────────── */
+.debug-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.debug-frame {
+  position: relative;
+  width: min(640px, 90vw);
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 0 40px rgba(122, 252, 255, 0.15);
+}
+
+.debug-video,
+.debug-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Selfie view: mirror the video. The canvas stays un-mirrored; landmark x is
+   flipped in toCanvasPoint (DEV_PLAN §8). */
+.debug-video {
+  transform: scaleX(-1);
+}
+
+.debug-hud {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.8rem;
   color: #b89bff;
 }
 
-.boot .muted {
-  font-size: 0.85rem;
-  color: #6a4cff;
-  margin-top: 0.6rem;
+.debug-hud button {
+  background: rgba(122, 252, 255, 0.12);
+  color: #c4ffff;
+  border: 1px solid rgba(122, 252, 255, 0.4);
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.debug-hud button:hover {
+  background: rgba(122, 252, 255, 0.22);
+}
+
+.debug-error {
+  color: #ff9ad2;
+  font-size: 0.8rem;
+  max-width: 40ch;
+  text-align: center;
+  margin: 0;
 }

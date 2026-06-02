@@ -41,6 +41,33 @@
 
 **자동 게이트 결과**: `typecheck` ✅ · `lint` ✅ · `test` ✅(파일 없음, passWithNoTests) · `build` ✅. dist/index.html이 `/generative-flower/`로 자산 경로를 올바르게 재작성, 모델 dist/models/에 복사됨.
 
+**배포 결과**: ✅ `dev` 푸시 → Actions build 22s + deploy 9s 성공. 라이브 https://jinsoo-96.github.io/generative-flower/ HTTP 200(HTTPS), 모델 `models/hand_landmarker.task` HTTP 200(7,819,105 bytes).
+
+**막힘 & 해결 (기록)**: 첫 배포에서 deploy 단계가 `Branch "dev" is not allowed to deploy to github-pages due to environment protection rules`로 거부됨. 원인: `github-pages` 환경 기본 정책이 `custom_branch_policies:true` + 등록 브랜치 0개라 dev 차단. 해결: 환경 `deployment_branch_policy=null`(모든 브랜치 허용)로 PUT → 실패 잡 rerun → 성공. 이 방식은 Phase 5에서 트리거를 main으로 바꿔도 환경 재설정이 불필요(문서 §13.3 "Settings 재설정 불필요"와 일치).
+
+**경고(비차단, 추적)**: Actions 로그에 `Node.js 20 actions deprecated` 경고(2026-06-16부터 Node 24 강제). checkout@v4/setup-node@v4/configure-pages@v5/upload-pages-artifact@v3/deploy-pages@v4 — 동작엔 문제 없음. 추후 액션 메이저 갱신 시 재검토.
+
 **최종 테스트로 미룬 항목**: 없음 (Phase 0-A는 배포 파이프라인까지, 카메라 없음).
 
-**남은 이슈**: dev 푸시 → Actions 배포 성공 + dev URL HTTPS 200 확인.
+---
+
+## Phase 0-B — 웹캠 + 손 인식 디버그 오버레이
+
+**한 일**
+
+- `src/tracking/landmarks.ts`: 21점 인덱스 상수(LM), FINGER_TIPS, HAND_CONNECTIONS(21 edges), 순수 헬퍼 `dist2D`/`mirrorX`/`toCanvasPoint`(미러링 §8 반영).
+- `src/tracking/landmarks.test.ts`: 합성 입력 단위 테스트 7개(거리, 미러링 flip, 캔버스 좌표 변환, 토폴로지 상수).
+- `src/tracking/useWebcam.ts`: getUserMedia(640×480, user) + `<video>` 연결 + 언마운트 트랙 정지. 권한은 `start()`(사용자 클릭)에서만 요청. 거부/미지원/미발견 상태 구분.
+- `src/tracking/useHandLandmarker.ts`: `createHandLandmarker`(GPU→CPU 폴백) + 모델 1회 로드 + throttle(~30fps) rAF 인식 루프. 결과는 `onResults` 콜백으로만 전달(매 프레임 React state 미사용, §3 루프 분리).
+- `src/ui/DebugOverlay.tsx`: 미러링된 `<video>` 위 비미러 `<canvas>`에 21점+골격 드로잉(x는 toCanvasPoint에서 flip). `App.tsx`에 연결 → 라이브 URL에서 “카메라 시작”으로 사람이 즉시 트래킹 확인 가능.
+
+**결정 기록 (비자명한 선택)**
+
+- `runningMode`: 문서 스니펫의 `'video'`(소문자)는 0.10.35 타입과 불일치 → **`'VIDEO'`**(대문자, `RunningMode`)로 보정.
+- eslint-plugin-react-hooks v7 규칙 대응: ① effect 본문 동기 `setState` 금지 → 모델 상태 초기값을 `'loading'`으로 두고 동기 호출 제거. ② render 중 ref 쓰기 금지 → "latest ref" 콜백을 effect 안에서 갱신.
+- 인식 루프는 `video.currentTime` 변화 + minInterval 이중 throttle로 같은 프레임 중복 디텍션 방지.
+- ⚠️ 다음 단계 메모: `erasableSyntaxOnly: true`라 **constructor 파라미터 프로퍼티/enum 사용 불가** → Phase 2 `OneEuro`는 필드 명시 선언으로 작성할 것.
+
+**자동 게이트 결과**: `typecheck` 0 · `lint` 0 · `test` 0(7 passed) · `build` 0. 번들 331KB(gzip 102KB, MediaPipe JS 래퍼 포함; WASM은 런타임 CDN 로드).
+
+**최종 테스트로 미룬 항목 (Phase 5, 사람·카메라)**: 카메라 권한 프롬프트 동작, 영상 셀피 미러링, 손 따라 21점/골격이 올바른 방향으로 그려지는지(왼손=화면 왼쪽). → **단, 사용자가 라이브 URL에서 “카메라 시작”으로 지금이라도 직접 확인 가능.**
