@@ -67,8 +67,10 @@ export function Flower() {
   const trans = useRef({ from: 'rose' as SpeciesName, to: 'rose' as SpeciesName, blend: 1 })
   const bloomDisp = useRef(0)
   const inited = useRef(false)
+  // Base (un-swayed) placement, so idle drift doesn't compound through the lerp.
+  const base = useRef({ x: 0, y: 0, rot: 0 })
 
-  useFrame((_, deltaRaw) => {
+  useFrame((state, deltaRaw) => {
     const g = group.current
     const petals = petalsRef.current
     const seeds = seedsRef.current
@@ -89,12 +91,20 @@ export function Flower() {
       aspect,
       distance: FLOWER_PLANE_DISTANCE,
     })
-    g.position.x = lerp(g.position.x, target.x, MOTION.positionLerp)
-    g.position.y = lerp(g.position.y, target.y, MOTION.positionLerp)
+    base.current.x = lerp(base.current.x, target.x, MOTION.positionLerp)
+    base.current.y = lerp(base.current.y, target.y, MOTION.positionLerp)
+    base.current.rot = lerp(base.current.rot, gesture.rotation, MOTION.rotationLerp)
+
+    // Idle "floating" drift/sway (DEV_PLAN §11 motion) — subtle, life-like.
+    const time = state.clock.elapsedTime
+    const w = TONE.motion.idleFreqHz * Math.PI * 2
+    const sway = (TONE.motion.idleSwayDeg * Math.PI) / 180
+    g.position.x = base.current.x + Math.sin(time * w) * TONE.motion.idleDriftWorld
+    g.position.y = base.current.y + Math.cos(time * w * 0.8) * TONE.motion.idleDriftWorld
+    g.rotation.z = base.current.rot + Math.sin(time * w * 1.1) * sway
     g.scale.setScalar(
       lerp(g.scale.x, depthToScale(gesture.depth, FLOWER.minScale, FLOWER.maxScale), MOTION.scaleLerp),
     )
-    g.rotation.z = lerp(g.rotation.z, gesture.rotation, MOTION.rotationLerp)
 
     // ── Species crossfade ──
     const desired = gesture.detected ? speciesForFingerCount(gesture.fingerCount) : trans.current.to

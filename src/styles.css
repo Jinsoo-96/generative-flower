@@ -116,3 +116,82 @@ body {
   max-width: 40ch;
   margin: 0;
 }
+
+/* ── Debug PiP hidden state (kept mounted; video keeps feeding tracking) ── */
+.debug-pip.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── Onboarding extras ───────────────────────────────────── */
+.howto {
+  list-style: none;
+  padding: 0;
+  margin: 0.4rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+  color: #c4b6ff;
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid rgba(122, 252, 255, 0.2);
+  border-top-color: #7afcff;
+  animation: spin 0.9s linear infinite;
+  margin: 0.4rem auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── HUD (top bar) ───────────────────────────────────────── */
+.hud {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(8, 1, 21, 0.35);
+  border: 1px solid rgba(122, 252, 255, 0.18);
+  backdrop-filter: blur(6px);
+  z-index: 8;
+  font-size: 0.8rem;
+}
+
+.hud-species {
+  color: #dcccff;
+  min-width: 5ch;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+.hud-btn {
+  background: rgba(122, 252, 255, 0.1);
+  color: #c4ffff;
+  border: 1px solid rgba(122, 252, 255, 0.35);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.hud-btn[aria-pressed='false'] {
+  color: #8a7db5;
+  border-color: rgba(122, 252, 255, 0.15);
+}
+
+.hud-btn:hover {
+  background: rgba(122, 252, 255, 0.2);
+}

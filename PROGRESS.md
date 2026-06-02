@@ -146,3 +146,29 @@
 **자동 게이트 결과**: `typecheck` 0 · `lint` 0 · `test` 0(**42 passed**: +flowerGeometry 6) · `build` 0. 번들 1,295KB(gzip 358KB; postprocessing 포함).
 
 **최종 테스트로 미룬 항목 (Phase 5, 사람·시각)**: 종류 전환 부드러움, 꽃잎 그라데이션/림으로 입체감, 회전 동작, 30fps, **투명+Bloom 배경 그라데이션 정상 표시**, 미감 사인오프(TONE 튜닝). → `?preview=1`로 지금 톤 미리보기 가능.
+
+---
+
+## Phase 4 — 파티클 · 후처리 · UI 폴리시
+
+**한 일**
+
+- `src/scene/Petals.tsx`: 주먹 rising-edge에 꽃 위치에서 꽃잎 파편 **버스트**(near-zero 중력, 페이드) + 배경 부유 **스포어 모트**. InstancedMesh + emissive basic(toneMapped off → Bloom). 가변 상태는 ref+effect 시드(렌더 중 Math.random/변경 금지 규칙 대응, Burst 클래스 메서드로 변경 캡슐화).
+- `src/scene/Stage.tsx`: `bloomEnabled` prop으로 Bloom 토글 + 상시 Vignette·ChromaticAberration(TONE.post). `<Petals/>` 추가.
+- `src/ui/Onboarding.tsx` + `onboardingPhase.ts`: 사용법 안내 + 카메라 시작(사용자 제스처 후 권한), 로딩 스피너, 거부/미지원/에러 폴백 + 재시도. 권한은 클릭에서만.
+- `src/ui/HUD.tsx`: 현재 꽃 종류 라벨 + Bloom 토글 + Debug 토글(aria-pressed).
+- `App.tsx` 재배선: Onboarding 게이트 + HUD(ready 시) + Bloom/Debug 상태. HUD 종류/검출은 200ms 인터벌로 gestureRef에서 저빈도 동기(값 변할 때만 setState). **DebugOverlay는 언마운트하지 않고 CSS로만 숨김**(공유 `<video>` 유지 → 트래킹 끊김 방지).
+- `Flower.tsx`: idle 부유 드리프트/스웨이(§11 motion) 추가 — base ref로 lerp와 분리해 compounding 방지.
+- `useWebcam.ts`: `classifyMediaError`(순수) + `isMediaSupported` 분리.
+
+**결정 기록 (비자명한 선택)**
+
+- React Compiler lint(react-hooks v7): ① 렌더 중 Math.random 금지 → 파티클 시드를 effect로. ② useMemo 결과/배열 요소 직접 변경 금지 → 파티클을 `useRef` + `BurstParticle` 클래스 메서드(spawn/step)로. ③ 컴포넌트 파일은 컴포넌트만 export → `onboardingPhase` 분리, `SPECIES_LABEL` 비export.
+- Debug PiP 토글은 `display:none`이 아닌 opacity/pointer-events로 숨김 → 비표시 중에도 `<video>`가 프레임을 디코딩해 인식 유지.
+- 컴포넌트 테스트용 jsdom + @testing-library/react 추가(`// @vitest-environment jsdom` 파일 단위).
+
+**검증(헤드리스 swiftshader, 카메라 불필요)**: preview rose/daisy 및 root 온보딩 모두 **콘솔/페이지 에러 0**, 캔버스·시작 버튼 정상. 스크린샷으로 온보딩 UI·배경 모트·vignette·3종 꽃 확인.
+
+**자동 게이트 결과**: `typecheck` 0 · `lint` 0 · `test` 0(**58 passed**: +webcam 5, Onboarding 7, HUD 4) · `build` 0. 번들 1,303KB(gzip 361KB).
+
+**최종 테스트로 미룬 항목 (Phase 5, 사람·카메라/시각)**: 주먹→흩뿌리기 연출, Bloom on/off 시각/프레임 회복, 권한 거부 안내 실제 표시, 30fps. → preview/온보딩은 지금 라이브에서 확인 가능.

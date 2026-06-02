@@ -8,6 +8,26 @@ export type WebcamStatus =
   | 'unsupported' // no getUserMedia (insecure context / old browser)
   | 'error' // other failure
 
+/** Is getUserMedia available (secure context / modern browser)? */
+export function isMediaSupported(): boolean {
+  return typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
+}
+
+/**
+ * Map a getUserMedia rejection to a fallback UI state + Korean message.
+ * Pure → unit-tested without a camera (DEV_PLAN Phase 4 DoD).
+ */
+export function classifyMediaError(e: unknown): { status: WebcamStatus; error: string } {
+  const name = e instanceof DOMException ? e.name : ''
+  if (name === 'NotAllowedError' || name === 'SecurityError') {
+    return { status: 'denied', error: '카메라 권한이 거부되었습니다. 브라우저 설정에서 허용 후 다시 시도하세요.' }
+  }
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') {
+    return { status: 'error', error: '사용 가능한 카메라를 찾지 못했습니다.' }
+  }
+  return { status: 'error', error: e instanceof Error ? e.message : String(e) }
+}
+
 export interface UseWebcamResult {
   videoRef: React.RefObject<HTMLVideoElement | null>
   status: WebcamStatus
@@ -37,7 +57,7 @@ export function useWebcam(): UseWebcamResult {
   }, [])
 
   const start = useCallback(async () => {
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+    if (!isMediaSupported()) {
       setStatus('unsupported')
       setError('이 브라우저/컨텍스트에서는 카메라를 사용할 수 없습니다 (HTTPS 필요).')
       return
@@ -59,17 +79,9 @@ export function useWebcam(): UseWebcamResult {
       }
       setStatus('ready')
     } catch (e) {
-      const name = e instanceof DOMException ? e.name : ''
-      if (name === 'NotAllowedError' || name === 'SecurityError') {
-        setStatus('denied')
-        setError('카메라 권한이 거부되었습니다. 브라우저 설정에서 허용 후 다시 시도하세요.')
-      } else if (name === 'NotFoundError' || name === 'OverconstrainedError') {
-        setStatus('error')
-        setError('사용 가능한 카메라를 찾지 못했습니다.')
-      } else {
-        setStatus('error')
-        setError(e instanceof Error ? e.message : String(e))
-      }
+      const { status: s, error: msg } = classifyMediaError(e)
+      setStatus(s)
+      setError(msg)
     }
   }, [])
 

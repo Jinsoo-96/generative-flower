@@ -1,13 +1,18 @@
+import { useEffect, useState } from 'react'
 import './styles.css'
 import { TrackingProvider } from './tracking/TrackingProvider'
 import { useTracking } from './tracking/trackingContext'
 import { Stage } from './scene/Stage'
 import { DebugOverlay } from './ui/DebugOverlay'
+import { Onboarding } from './ui/Onboarding'
+import { HUD } from './ui/HUD'
+import { speciesForFingerCount, type SpeciesName } from './scene/flowerGeometry'
+import { TONE } from './config'
 import type { GestureState } from './gestures/types'
 
 /**
- * ?preview=1 → static tone view (no camera/model), for eyeballing TONE.
- * Optional ?fingers=1|2|3 (species) and ?bloom=0..1 to explore.
+ * ?preview=1 → static tone view (no camera/model). Optional ?fingers=1|2|3
+ * (species) and ?bloom=0..1.
  */
 function previewGesture(): GestureState | null {
   if (typeof window === 'undefined') return null
@@ -27,35 +32,49 @@ function previewGesture(): GestureState | null {
   }
 }
 
-/**
- * Phase 3: generative flower scene driven by the shared gestureRef, with the
- * webcam landmark debug overlay as a PiP. A minimal start card requests the
- * camera (full onboarding/HUD arrive in Phase 4).
- */
+/** Phase 4: full scene — onboarding gate, HUD, Bloom/Debug toggles. */
 function Scene() {
-  const { camStatus, modelStatus, camError, modelError, start } = useTracking()
-  const started = camStatus === 'starting' || camStatus === 'ready'
+  const { camStatus, modelStatus, camError, modelError, start, gestureRef } = useTracking()
+  const [bloomEnabled, setBloomEnabled] = useState<boolean>(TONE.bloom.enabled)
+  const [showDebug, setShowDebug] = useState(false)
+  const [species, setSpecies] = useState<SpeciesName>('rose')
+  const [detected, setDetected] = useState(false)
+
+  // Low-frequency HUD sync from the mutable gestureRef (no per-frame React state).
+  useEffect(() => {
+    const id = setInterval(() => {
+      const g = gestureRef.current
+      setDetected((p) => (p === g.detected ? p : g.detected))
+      const next = speciesForFingerCount(g.fingerCount)
+      setSpecies((p) => (p === next ? p : next))
+    }, 200)
+    return () => clearInterval(id)
+  }, [gestureRef])
+
+  const ready = camStatus === 'ready' && modelStatus === 'ready'
 
   return (
     <main className="app-stage">
-      <Stage />
-      <DebugOverlay className="pip" />
-
-      {!started && (
-        <div className="start-card">
-          <h1>🌸 Generative Flower</h1>
-          <p>손동작 기반 제너러티브 꽃 미디어아트</p>
-          <button type="button" onClick={start}>
-            카메라 시작
-          </button>
-          <p className="muted">
-            cam: {camStatus} · model: {modelStatus}
-          </p>
-          {(camError || modelError) && (
-            <p className="debug-error">{camError ?? modelError}</p>
-          )}
-        </div>
+      <Stage bloomEnabled={bloomEnabled} />
+      {/* Always mounted (hosts the shared <video>); only visually toggled. */}
+      <DebugOverlay visible={showDebug} />
+      {ready && (
+        <HUD
+          species={species}
+          detected={detected}
+          bloomEnabled={bloomEnabled}
+          onToggleBloom={() => setBloomEnabled((v) => !v)}
+          showDebug={showDebug}
+          onToggleDebug={() => setShowDebug((v) => !v)}
+        />
       )}
+      <Onboarding
+        camStatus={camStatus}
+        modelStatus={modelStatus}
+        camError={camError}
+        modelError={modelError}
+        onStart={start}
+      />
     </main>
   )
 }

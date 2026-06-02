@@ -1,15 +1,23 @@
+import { useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { EffectComposer, Bloom } from '@react-three/postprocessing'
+import { EffectComposer, Bloom, Vignette, ChromaticAberration } from '@react-three/postprocessing'
+import { Vector2 } from 'three'
 import { CAMERA, TONE } from '../config'
 import { Flower } from './Flower'
+import { Petals } from './Petals'
 
 /**
  * R3F stage: perspective camera + dark ambient/key lighting (DEV_PLAN §11 —
- * the flower is mostly self-lit via emissive; lights only shape it). The canvas
- * is transparent so the CSS radial-gradient background (TONE.background) shows
- * through. Bloom blooms the emissive petals (toggle/vignette/CA → Phase 4).
+ * the flower is mostly self-lit via emissive). Transparent canvas → CSS radial
+ * gradient (TONE.background) shows through. Bloom is the heaviest pass and is
+ * toggleable from the HUD; subtle vignette + chromatic aberration stay on.
  */
-export function Stage() {
+export function Stage({ bloomEnabled = true }: { bloomEnabled?: boolean }) {
+  const caOffset = useMemo(
+    () => new Vector2(TONE.post.chromaticAberration.offset, TONE.post.chromaticAberration.offset),
+    [],
+  )
+
   return (
     <Canvas
       dpr={[1, 2]}
@@ -22,14 +30,25 @@ export function Stage() {
       <ambientLight intensity={TONE.lighting.ambientIntensity} color={TONE.lighting.ambientColor} />
       <directionalLight position={[2, 3, 4]} intensity={TONE.lighting.keyIntensity} color={TONE.lighting.keyColor} />
       <Flower />
+      <Petals />
       <EffectComposer>
-        <Bloom
-          intensity={TONE.bloom.intensity}
-          luminanceThreshold={TONE.bloom.luminanceThreshold}
-          luminanceSmoothing={TONE.bloom.luminanceSmoothing}
-          mipmapBlur={TONE.bloom.mipmapBlur}
-          radius={TONE.bloom.radius}
-        />
+        <>
+          {bloomEnabled && (
+            <Bloom
+              intensity={TONE.bloom.intensity}
+              luminanceThreshold={TONE.bloom.luminanceThreshold}
+              luminanceSmoothing={TONE.bloom.luminanceSmoothing}
+              mipmapBlur={TONE.bloom.mipmapBlur}
+              radius={TONE.bloom.radius}
+            />
+          )}
+          {TONE.post.chromaticAberration.enabled && (
+            <ChromaticAberration offset={caOffset} radialModulation={false} modulationOffset={0} />
+          )}
+          {TONE.post.vignette.enabled && (
+            <Vignette offset={TONE.post.vignette.offset} darkness={TONE.post.vignette.darkness} />
+          )}
+        </>
       </EffectComposer>
     </Canvas>
   )

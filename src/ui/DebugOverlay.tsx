@@ -8,7 +8,7 @@ import { HAND_CONNECTIONS, toCanvasPoint } from '../tracking/landmarks'
  * latest result. The canvas is NOT mirrored; x is flipped in toCanvasPoint
  * (DEV_PLAN §8). Owns no tracking — reads videoRef + lastResultRef from context.
  */
-export function DebugOverlay({ className = '' }: { className?: string }) {
+export function DebugOverlay({ visible = true }: { visible?: boolean }) {
   const { videoRef, lastResultRef } = useTracking()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
@@ -53,8 +53,11 @@ export function DebugOverlay({ className = '' }: { className?: string }) {
     return () => cancelAnimationFrame(raf)
   }, [videoRef, lastResultRef])
 
+  // Kept mounted even when hidden — it hosts the shared <video> the webcam
+  // attaches to; unmounting would break tracking. Hidden via CSS (the video
+  // keeps decoding frames for the detector).
   return (
-    <div className={`debug-pip ${className}`.trim()}>
+    <div className={`debug-pip ${visible ? '' : 'is-hidden'}`.trim()}>
       <video ref={videoRef} autoPlay muted playsInline className="debug-video" />
       <canvas ref={canvasRef} className="debug-canvas" />
     </div>
