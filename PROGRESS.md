@@ -98,3 +98,26 @@
 **자동 게이트 결과**: `typecheck` 0 · `lint` 0 · `test` 0(15 passed: landmarks 7 + mapping 8) · `build` 0. 번들 1,215KB(gzip 338KB) → `>500KB 청크` 경고(비차단; three+R3F+MediaPipe). 추후 동적 import 코드분할 검토(백로그).
 
 **최종 테스트로 미룬 항목 (Phase 5, 사람·카메라)**: 실제 손 이동 시 꽃이 시각적으로 일치하게 따라옴(좌우/상하), 손 가까이→꽃 커짐. → 사용자가 라이브 URL에서 지금 직접 확인 가능.
+
+---
+
+## Phase 2 — 제스처 시스템 (핀치→개화) + One Euro 스무딩
+
+**한 일**
+
+- `src/config.ts` 확장: `PINCH`(closed/open), `FINGER`(extRatio/thumbExtRatio), `FIST`(tipToPalmRatio), `ONE_EURO`(신호별 시작 파라미터), `MOTION.bloomLerp/rotationLerp`.
+- `src/gestures/oneEuro.ts`: One Euro Filter(§10). ⚠️ `erasableSyntaxOnly` 때문에 **constructor 파라미터 프로퍼티 미사용**(필드 명시 선언). `makeOneEuro(params)` 포함.
+- `src/gestures/extract.ts` 완성: `pinchRatio`/`bloomFromPinch`(§9.3), `isFingerExtended`/`isThumbExtended`/`countFingers`(§9.4), `rotationAngle`(§9.5), `isFist`. `extractGesture`가 position/depth/bloom/fingerCount/rotation/isFist 전부 산출.
+- `src/gestures/smoothing.ts`: `makeGestureSmoother()` — position.x/y·depth·bloom·rotation에 개별 One Euro, fingerCount/isFist는 raw 통과.
+- `TrackingProvider`: onResults에서 extractGesture → smoother.smooth(raw, now/1000) → gestureRef.
+- `Flower.tsx`: bloom→꽃잎 펼침(반경·pitch 보간), rotation→group.rotation.z, 렌더 루프 추가 lerp.
+
+**결정 기록 (비자명한 선택)**
+
+- `isThumbExtended`를 문서의 "엄지끝–검지MCP 가로 분리" 대신 **"엄지끝(4)이 엄지MCP(2)보다 손목에서 thumbExtRatio(1.25)배 멀면 폄"** 으로 구현 — 다른 손가락과 동형이라 합성 테스트가 결정적이고 handedness 불필요. 실제 정확도는 카메라 테스트에서 검증.
+- rotation은 atan2라 ±π 경계 불연속 가능 — roll ±90° 범위에선 무해. 필요 시 Phase 5에서 sin/cos 분리 스무딩 검토.
+- 합성 손 빌더(extract.test.ts)로 손가락 0~5/주먹/핀치를 결정적으로 구성해 테스트.
+
+**자동 게이트 결과**: `typecheck` 0 · `lint` 0 · `test` 0(**36 passed**: landmarks 7 + mapping 8 + extract 17 + oneEuro 4) · `build` 0. 번들 1,218KB(gzip 339KB).
+
+**최종 테스트로 미룬 항목 (Phase 5, 사람·카메라)**: 핀치 봉오리↔만개 떨림 없이 부드럽게, 거리 무관 개화 일정, 정지 시 떨림(=One Euro minCutoff 튜닝), 빠른 동작 끈적임(=beta 튜닝). → 사용자가 라이브 URL에서 지금 직접 확인 가능.
