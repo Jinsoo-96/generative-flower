@@ -15,9 +15,9 @@ import { TONE } from '../config'
 export function makePetalGeometry(): BufferGeometry {
   const s = new Shape()
   s.moveTo(0, 0)
-  s.bezierCurveTo(0.18, 0.15, 0.16, 0.75, 0, 1)
-  s.bezierCurveTo(-0.16, 0.75, -0.18, 0.15, 0, 0)
-  return new ShapeGeometry(s, 20)
+  s.bezierCurveTo(0.24, 0.18, 0.2, 0.86, 0, 1)
+  s.bezierCurveTo(-0.2, 0.86, -0.24, 0.18, 0, 0)
+  return new ShapeGeometry(s, 24)
 }
 
 const vertexShader = /* glsl */ `

@@ -5,20 +5,26 @@ import { Stage } from './scene/Stage'
 import { DebugOverlay } from './ui/DebugOverlay'
 import type { GestureState } from './gestures/types'
 
-/** ?preview=1 → static tone view (no camera/model), for eyeballing TONE. */
-const PREVIEW: GestureState = {
-  detected: true,
-  position: { x: 0.5, y: 0.5 },
-  depth: 0.6,
-  bloom: 0.85,
-  fingerCount: 1, // rose
-  rotation: 0,
-  isFist: false,
-}
-
-function isPreview(): boolean {
-  if (typeof window === 'undefined') return false
-  return new URLSearchParams(window.location.search).get('preview') === '1'
+/**
+ * ?preview=1 → static tone view (no camera/model), for eyeballing TONE.
+ * Optional ?fingers=1|2|3 (species) and ?bloom=0..1 to explore.
+ */
+function previewGesture(): GestureState | null {
+  if (typeof window === 'undefined') return null
+  const q = new URLSearchParams(window.location.search)
+  if (q.get('preview') !== '1') return null
+  const fingers = Number(q.get('fingers'))
+  const bloom = Number(q.get('bloom'))
+  const fc = (Number.isFinite(fingers) && fingers >= 0 && fingers <= 5 ? fingers : 1) as GestureState['fingerCount']
+  return {
+    detected: true,
+    position: { x: 0.5, y: 0.5 },
+    depth: 0.6,
+    bloom: Number.isFinite(bloom) && bloom >= 0 && bloom <= 1 ? bloom : 0.85,
+    fingerCount: fc,
+    rotation: 0,
+    isFist: false,
+  }
 }
 
 /**
@@ -55,9 +61,10 @@ function Scene() {
 }
 
 function App() {
-  if (isPreview()) {
+  const preview = previewGesture()
+  if (preview) {
     return (
-      <TrackingProvider preview={PREVIEW}>
+      <TrackingProvider preview={preview}>
         <main className="app-stage">
           <Stage />
         </main>

@@ -42,10 +42,10 @@ export const SPECIES: Record<SpeciesName, SpeciesDef> = {
   rose: {
     name: 'rose',
     layers: [
-      { count: 8, radius: 0.14, len: 0.5, width: 0.3, phase: 0.0 },
-      { count: 8, radius: 0.26, len: 0.6, width: 0.32, phase: 0.25 },
-      { count: 8, radius: 0.4, len: 0.68, width: 0.34, phase: 0.5 },
-      { count: 6, radius: 0.52, len: 0.66, width: 0.3, phase: 0.75 },
+      { count: 8, radius: 0.12, len: 0.46, width: 0.46, phase: 0.0 },
+      { count: 8, radius: 0.24, len: 0.54, width: 0.5, phase: 0.25 },
+      { count: 8, radius: 0.38, len: 0.6, width: 0.5, phase: 0.5 },
+      { count: 6, radius: 0.5, len: 0.58, width: 0.46, phase: 0.75 },
     ],
     coreScale: 0.16,
     seedCount: 24,
