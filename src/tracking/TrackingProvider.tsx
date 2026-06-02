@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import type { HandLandmarkerResult } from '@mediapipe/tasks-vision'
 import { useWebcam } from './useWebcam'
 import { useHandLandmarker } from './useHandLandmarker'
@@ -12,12 +12,25 @@ import { TrackingContext, type TrackingContextValue } from './trackingContext'
  * a mutable `gestureRef` (no per-frame React state — DEV_PLAN §2, §3). The 3D
  * scene reads `gestureRef`; the debug overlay reads `videoRef` + `lastResultRef`.
  */
-export function TrackingProvider({ children }: { children: ReactNode }) {
+export function TrackingProvider({
+  children,
+  preview,
+}: {
+  children: ReactNode
+  /** Static gesture for the `?preview=1` tone view — no webcam/model loaded. */
+  preview?: GestureState
+}) {
   const { videoRef, status: camStatus, error: camError, start, stop } = useWebcam()
+  const active = !preview
 
-  const gestureRef = useRef<GestureState>(defaultGestureState())
+  const gestureRef = useRef<GestureState>(preview ?? defaultGestureState())
   const lastResultRef = useRef<HandLandmarkerResult | null>(null)
   const smootherRef = useRef(makeGestureSmoother())
+
+  // Keep the preview gesture pinned (set in an effect, not during render).
+  useEffect(() => {
+    if (preview) gestureRef.current = preview
+  }, [preview])
 
   const onResults = useCallback((result: HandLandmarkerResult) => {
     lastResultRef.current = result
@@ -34,7 +47,8 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
 
   const { status: modelStatus, error: modelError } = useHandLandmarker({
     videoRef,
-    enabled: camStatus === 'ready',
+    enabled: active && camStatus === 'ready',
+    load: active,
     onResults,
   })
 

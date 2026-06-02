@@ -42,6 +42,8 @@ export interface UseHandLandmarkerOptions {
   videoRef: React.RefObject<HTMLVideoElement | null>
   /** Run the detection loop only when true (e.g. webcam is ready). */
   enabled: boolean
+  /** Load the model at all. false in preview mode → no network/WASM (DEV_PLAN §11 preview). */
+  load?: boolean
   /** Called on each fresh detection with the result and the source video. */
   onResults?: (result: HandLandmarkerResult, video: HTMLVideoElement) => void
   /** Detection throttle target (DEV_PLAN §12: ~30fps, separate from 60fps render). */
@@ -61,13 +63,15 @@ export interface UseHandLandmarkerResult {
 export function useHandLandmarker({
   videoRef,
   enabled,
+  load = true,
   onResults,
   detectFps = 30,
 }: UseHandLandmarkerOptions): UseHandLandmarkerResult {
-  // Starts at 'loading': the model-load effect runs on mount, so the initial
-  // state already reflects it (avoids a synchronous setState inside the effect,
-  // which eslint-plugin-react-hooks v7 forbids).
-  const [status, setStatus] = useState<LandmarkerStatus>('loading')
+  // Starts at 'loading' when loading is requested (the load effect runs on
+  // mount, so the initial state already reflects it — avoids a synchronous
+  // setState inside the effect, which eslint-plugin-react-hooks v7 forbids).
+  // In preview mode (load=false) there's nothing to wait on → 'ready'.
+  const [status, setStatus] = useState<LandmarkerStatus>(load ? 'loading' : 'ready')
   const [error, setError] = useState<string | null>(null)
 
   const landmarkerRef = useRef<HandLandmarker | null>(null)
@@ -81,8 +85,9 @@ export function useHandLandmarker({
     onResultsRef.current = onResults
   })
 
-  // Load model once.
+  // Load model once (skipped entirely in preview mode).
   useEffect(() => {
+    if (!load) return
     let cancelled = false
     createHandLandmarker()
       .then((l) => {
@@ -103,7 +108,7 @@ export function useHandLandmarker({
       landmarkerRef.current?.close()
       landmarkerRef.current = null
     }
-  }, [])
+  }, [load])
 
   // Detection loop (throttled rAF).
   useEffect(() => {

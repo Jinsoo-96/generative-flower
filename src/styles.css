@@ -17,8 +17,9 @@ body,
 }
 
 body {
-  /* Bioluminescent / ethereal mood (see TONE in src/config.ts) */
-  background: radial-gradient(circle at 50% 60%, #1a0838 0%, #080115 70%);
+  /* Bioluminescent / ethereal mood — TONE.background (src/config.ts §11).
+     The R3F canvas is transparent so this gradient is the scene backdrop. */
+  background: radial-gradient(circle at 50% 45%, #2a0f55 0%, #1a0838 38%, #080115 82%);
   color: #dcccff;
 }
 

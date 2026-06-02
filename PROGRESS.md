@@ -121,3 +121,28 @@
 **자동 게이트 결과**: `typecheck` 0 · `lint` 0 · `test` 0(**36 passed**: landmarks 7 + mapping 8 + extract 17 + oneEuro 4) · `build` 0. 번들 1,218KB(gzip 339KB).
 
 **최종 테스트로 미룬 항목 (Phase 5, 사람·카메라)**: 핀치 봉오리↔만개 떨림 없이 부드럽게, 거리 무관 개화 일정, 정지 시 떨림(=One Euro minCutoff 튜닝), 빠른 동작 끈적임(=beta 튜닝). → 사용자가 라이브 URL에서 지금 직접 확인 가능.
+
+---
+
+## Phase 3 — 꽃 다양성 & 비주얼
+
+**한 일**
+
+- `src/config.ts`: §11 `TONE` 토큰 블록 그대로 추가(배경/종별 색/petalMaterial/조명/bloom/모션/파티클/post). 톤 단일 진실 소스.
+- `src/scene/flowerGeometry.ts`(순수): `phyllotaxis`(황금각 137.5°), 3종 `SPECIES`(rose 4겹 30장 / daisy phyllotaxis코어+13장 / lotus 넓은 14장), `speciesForFingerCount`(≤1 rose,2 daisy,≥3 lotus), `buildPetalSlots`(MAX_PETALS=32 고정 슬롯, 비활성 패딩).
+- `src/scene/flowerGeometry.test.ts`: 6 테스트(황금각, sqrt(i) 반경, 종류 매핑, 슬롯 패딩/개수).
+- `src/scene/petalMaterial.ts`: 꽃잎 ShaderMaterial — base→tip 그라데이션 + 프레넬 림(self-lit emissive, Bloom 구동), 인스턴싱 대응 vertex(`#ifdef USE_INSTANCING`). `makePetalGeometry`(Shape 기반 꽃잎, uv.y=base→tip).
+- `src/scene/Flower.tsx` 재작성: 인스턴싱 꽃잎(MAX_PETALS) + phyllotaxis 골드 씨앗 코어(InstancedMesh). bloom→꽃잎 펼침(레이어별 위상 지연), fingerCount→종류 **크로스페이드**(0.45s, 슬롯/색/코어 lerp), rotation→roll, position/depth→배치/스케일. 매 프레임 gestureRef만 읽음.
+- `src/scene/Stage.tsx`: 투명 캔버스(alpha) + CSS 방사형 그라데이션 배경(TONE) + `EffectComposer`/`Bloom`(TONE.bloom).
+- `?preview=1` 정적 톤 프리뷰: `TrackingProvider preview={...}`(웹캠/모델 미로드, load=false), App에서 분기. 카메라 없이 dev URL에서 톤 확인 가능.
+
+**결정 기록 (비자명한 선택)**
+
+- 종류 전환은 고정 슬롯(MAX_PETALS) 위에서 from→to 슬롯/색을 lerp하는 크로스페이드(개수 차이는 active 0↔1 페이드). 진짜 위상 모핑 대신 짧은 전환으로 자연스러움 확보.
+- 배경은 `<color>` 대신 투명 캔버스 + CSS 그라데이션 → 순색 배경 금지(§11) 충족, 후처리와 무관하게 그라데이션 유지. ⚠️ 투명+EffectComposer 합성은 Phase 5 카메라 테스트에서 눈으로 최종 확인.
+- 셰이더는 RawShaderMaterial이 아닌 ShaderMaterial → three가 normalMatrix/uv/position/instanceMatrix(USE_INSTANCING) 자동 주입.
+- Bloom 후처리를 Phase 3에서 도입(프리뷰가 발광을 요구). Bloom **토글**·vignette/CA·파티클은 Phase 4.
+
+**자동 게이트 결과**: `typecheck` 0 · `lint` 0 · `test` 0(**42 passed**: +flowerGeometry 6) · `build` 0. 번들 1,295KB(gzip 358KB; postprocessing 포함).
+
+**최종 테스트로 미룬 항목 (Phase 5, 사람·시각)**: 종류 전환 부드러움, 꽃잎 그라데이션/림으로 입체감, 회전 동작, 30fps, **투명+Bloom 배경 그라데이션 정상 표시**, 미감 사인오프(TONE 튜닝). → `?preview=1`로 지금 톤 미리보기 가능.
