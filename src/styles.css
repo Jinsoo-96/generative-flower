@@ -1,0 +1,53 @@
+:root {
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  /* Bioluminescent / ethereal mood (see TONE in src/config.ts) */
+  background: radial-gradient(circle at 50% 60%, #1a0838 0%, #080115 70%);
+  color: #dcccff;
+}
+
+.boot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 0.4rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.boot h1 {
+  font-weight: 300;
+  font-size: clamp(1.6rem, 5vw, 2.6rem);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.boot p {
+  margin: 0;
+  font-weight: 300;
+  color: #b89bff;
+}
+
+.boot .muted {
+  font-size: 0.85rem;
+  color: #6a4cff;
+  margin-top: 0.6rem;
+}

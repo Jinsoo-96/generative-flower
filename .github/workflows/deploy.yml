@@ -1,0 +1,39 @@
+# .github/workflows/deploy.yml
+# 개발 중: 트리거 = dev (dev 푸시마다 GitHub Pages로 자동 배포 = 빌드 헬스 체크).
+# 릴리스(Phase 5): 트리거를 main 으로 변경 후 dev→main 머지로 프로덕션 승격.
+name: Deploy to GitHub Pages
+on:
+  push:
+    branches: [dev] # ← 개발 중: dev. 릴리스(Phase 5) 때 main으로 변경.
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
