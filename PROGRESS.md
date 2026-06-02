@@ -191,3 +191,33 @@
 5. "셰이더 uniform 색상 GPU 미동기화" — ShaderMaterial은 매 프레임 uniform을 업로드(모든 uTime 애니메이션이 의존). in-place `lerpColors`는 그대로 반영됨. 방어용 `uniformsNeedUpdate` 시도는 컴파일러 immutability 규칙과 충돌 + 불필요 → 미적용.
 
 **검증**: `typecheck` 0 · `lint` 0 · `test` 0(**62 passed**, +smoothing 3, +onboarding model-error 1) · `build` 0. 헤드리스 재렌더 3종 에러 0, rim 라이팅 정상.
+
+---
+
+## Phase 5 — 프로덕션 승격 (dev → main)
+
+**한 일**
+
+- `README.md` 마감: 라이브 URL, 스크린샷 갤러리(rose/daisy/lotus/온보딩, `docs/img/`), 조작법, 기술 스택, 개발/배포/성능, `?preview=1` 안내.
+- `.github/workflows/deploy.yml` 트리거 **dev → main** 전환(프로덕션은 main에서만 배포). `base`는 `/generative-flower/` 그대로(재설정 불필요), Pages 소스는 계속 "GitHub Actions".
+- `dev → main` PR 생성 후 `--no-ff` 머지(히스토리 보존) → main 푸시가 Actions 트리거 → 프로덕션 배포.
+
+**자동 게이트 결과**: `typecheck` 0 · `lint` 0 · `test` 0(62 passed) · `build` 0. 프로덕션 배포 성공, 동일 URL이 main 내용으로 서비스(HTTP 200), 헤드리스 스모크 에러 0.
+
+**⚠️ 사람이 해야 하는 최종 카메라/시각 테스트 (§14 — 에이전트가 수행 불가)**
+
+데스크톱 Chrome(웹캠)에서 라이브 URL을 열고 순서대로 확인:
+
+- [ ] 1. 온보딩 → "카메라 시작" → 권한 허용 → 씬 진입.
+- [ ] 2. 손 진입 → 꽃 등장, 손 따라 이동(좌우 방향 정상 = 미러링).
+- [ ] 3. 손 가까이/멀리 → 꽃 크기 변화.
+- [ ] 4. 핀치 닫기/열기 → 봉오리↔만개, 정지 시 떨림 없음(떨리면 `config.ts` `ONE_EURO.*.minCutoff` ↓).
+- [ ] 5. 손가락 1·2·3 → 꽃 종류(장미/데이지/연꽃) 부드럽게 전환.
+- [ ] 6. 손 회전 → 꽃 회전 **방향** 정상(반대면 `extract.ts rotationAngle` 부호 반전 — §8 진단).
+- [ ] 7. 주먹 → 꽃잎 흩뿌리기 버스트.
+- [ ] 8. Bloom 토글 / 디버그 오버레이 토글 동작.
+- [ ] 9. 손 화면 밖 → 마지막 상태 유지(튀지 않음).
+- [ ] 10. 권한 거부 시 에러 안내 + 앱 비충돌.
+- [ ] 미감 사인오프: 톤이 "발광·몽환"으로 읽히는지. 필요 시 `config.ts TONE`(특히 `petalMaterial.emissiveIntensity`, `bloom.*`, `species.*`) 튜닝 후 dev→main 재배포.
+
+미통과 항목은 dev에서 고쳐 재배포(트리거 main이므로 dev→main 머지로 반영).
