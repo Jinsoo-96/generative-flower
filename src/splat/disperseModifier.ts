@@ -33,9 +33,9 @@ export function makeDisperseModifier(o: DisperseOpts = {}): DisperseModifier {
   // This asset's native splat scales are tiny + opacity very low (~0.1–3%), and
   // fully-gathered (coincident) splats barely accumulate. BASE/GROW puff them up;
   // OPACITY_BOOST lifts them out of near-transparency. All tunable via URL.
-  const BASE = dyno.dynoFloat(o.base ?? 1) // base scale multiplier
+  const BASE = dyno.dynoFloat(o.base ?? 3) // base scale multiplier (visible when gathered)
   const GROW = dyno.dynoFloat(o.grow ?? 2.5) // extra scale at full disperse
-  const OPACITY_BOOST = dyno.dynoFloat(o.opacityBoost ?? 18)
+  const OPACITY_BOOST = dyno.dynoFloat(o.opacityBoost ?? 26)
 
   const modifier = dyno.dynoBlock(
     { gsplat: dyno.Gsplat },
