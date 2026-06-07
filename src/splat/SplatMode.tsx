@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import { TrackingProvider } from '../tracking/TrackingProvider'
 import { useTracking } from '../tracking/trackingContext'
 import { defaultGestureState } from '../gestures/types'
+import { ModeSwitch } from '../ui/ModeSwitch'
 import { SplatScene } from './SplatScene'
 import type { DisperseOpts } from './disperseModifier'
 
@@ -40,17 +41,19 @@ function SplatInner({
         />
       </Canvas>
 
+      {!auto && fixedProgress == null && <ModeSwitch current="splat" />}
+
       {!loaded && (
         <div className="start-card">
           <div className="spinner" aria-label="loading" />
-          <p className="muted">splat 로딩 중… (≈17MB)</p>
+          <p className="muted">splat 로딩 중… (≈17MB, 첫 진입만)</p>
         </div>
       )}
 
+      {/* Non-obscuring prompt so the drifting smoke is visible behind it. */}
       {loaded && !auto && fixedProgress == null && !started && (
-        <div className="start-card">
-          <h1>🌫️ Splat — 흩어졌다 모이기</h1>
-          <p>손을 펼치면 연기처럼 흩어지고, 주먹을 쥐면 다시 모입니다</p>
+        <div className="splat-prompt">
+          <span>손을 펼치면 흩어지고, 주먹을 쥐면 모입니다</span>
           <button type="button" onClick={start}>
             카메라 시작
           </button>

@@ -195,3 +195,73 @@ body {
 .hud-btn:hover {
   background: rgba(122, 252, 255, 0.2);
 }
+
+/* ── Mode switch (top-left, above everything) ────────────── */
+.mode-switch {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: rgba(8, 1, 21, 0.45);
+  border: 1px solid rgba(122, 252, 255, 0.18);
+  backdrop-filter: blur(6px);
+  z-index: 20;
+}
+
+.mode-switch button {
+  background: transparent;
+  color: #8a7db5;
+  border: none;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.mode-switch button[aria-pressed='true'] {
+  background: rgba(122, 252, 255, 0.16);
+  color: #dcccff;
+}
+
+.mode-switch button:hover {
+  color: #dcccff;
+}
+
+/* ── Splat: small non-obscuring start prompt (bottom center) ─ */
+.splat-prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.5rem 0.6rem 0.5rem 1rem;
+  border-radius: 999px;
+  background: rgba(8, 1, 21, 0.45);
+  border: 1px solid rgba(122, 252, 255, 0.18);
+  backdrop-filter: blur(6px);
+  z-index: 10;
+  font-size: 0.85rem;
+  color: #c4b6ff;
+  max-width: 92vw;
+}
+
+.splat-prompt button {
+  flex: none;
+  background: rgba(122, 252, 255, 0.14);
+  color: #c4ffff;
+  border: 1px solid rgba(122, 252, 255, 0.45);
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.splat-prompt button:hover {
+  background: rgba(122, 252, 255, 0.24);
+}
