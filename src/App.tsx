@@ -7,6 +7,7 @@ import { DebugOverlay } from './ui/DebugOverlay'
 import { Onboarding } from './ui/Onboarding'
 import { HUD } from './ui/HUD'
 import { speciesForFingerCount, type SpeciesName } from './scene/flowerGeometry'
+import { SplatMode } from './splat/SplatMode'
 import { TONE } from './config'
 import type { GestureState } from './gestures/types'
 
@@ -80,6 +81,20 @@ function Scene() {
 }
 
 function App() {
+  // ?mode=splat → standalone Gaussian-splat disperse mode (?auto=1 = no camera).
+  if (typeof window !== 'undefined') {
+    const q = new URLSearchParams(window.location.search)
+    if (q.get('mode') === 'splat') {
+      const p = Number(q.get('p'))
+      return (
+        <SplatMode
+          auto={q.get('auto') === '1'}
+          fixedProgress={Number.isFinite(p) && q.has('p') ? p : undefined}
+        />
+      )
+    }
+  }
+
   const preview = previewGesture()
   if (preview) {
     return (
