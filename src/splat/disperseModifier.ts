@@ -6,6 +6,17 @@ export interface DisperseModifier {
   progress: ReturnType<typeof dyno.dynoFloat>
 }
 
+export interface DisperseOpts {
+  /** Base splat-scale multiplier (visible even when gathered). */
+  base?: number
+  /** Extra scale added at full disperse. */
+  grow?: number
+  /** World-units of outward travel at full disperse. */
+  spread?: number
+  /** Opacity multiplier (this asset's native opacity is ~0.1–3%). */
+  opacityBoost?: number
+}
+
 /**
  * Spark objectModifier that disperses each splat from its home toward a
  * per-splat pseudo-random direction as `progress` 0→1, growing + fading it
@@ -14,17 +25,17 @@ export interface DisperseModifier {
  * Each splat deterministically leaves from its home (hash of center), so splat
  * identity/index is stable and depth-sort stays coherent under smooth progress.
  */
-export function makeDisperseModifier(): DisperseModifier {
+export function makeDisperseModifier(o: DisperseOpts = {}): DisperseModifier {
   const progress = dyno.dynoFloat(0)
   const ONE = dyno.dynoFloat(1)
   const TWO = dyno.dynoFloat(2)
-  const SPREAD = dyno.dynoFloat(2.2) // world-units of travel at full disperse
+  const SPREAD = dyno.dynoFloat(o.spread ?? 2.2) // world-units of travel at full disperse
   // This asset's native splat scales are tiny + opacity very low (~0.1–3%), and
-  // fully-gathered (coincident) splats barely accumulate. BASE/GROW puff them up
-  // on disperse; OPACITY_BOOST lifts them out of near-transparency.
-  const BASE = dyno.dynoFloat(1) // base scale multiplier
-  const GROW = dyno.dynoFloat(2.5) // extra scale at full disperse
-  const OPACITY_BOOST = dyno.dynoFloat(18)
+  // fully-gathered (coincident) splats barely accumulate. BASE/GROW puff them up;
+  // OPACITY_BOOST lifts them out of near-transparency. All tunable via URL.
+  const BASE = dyno.dynoFloat(o.base ?? 1) // base scale multiplier
+  const GROW = dyno.dynoFloat(o.grow ?? 2.5) // extra scale at full disperse
+  const OPACITY_BOOST = dyno.dynoFloat(o.opacityBoost ?? 18)
 
   const modifier = dyno.dynoBlock(
     { gsplat: dyno.Gsplat },

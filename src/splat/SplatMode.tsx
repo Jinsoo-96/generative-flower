@@ -4,8 +4,22 @@ import { TrackingProvider } from '../tracking/TrackingProvider'
 import { useTracking } from '../tracking/trackingContext'
 import { defaultGestureState } from '../gestures/types'
 import { SplatScene } from './SplatScene'
+import type { DisperseOpts } from './disperseModifier'
 
-function SplatInner({ auto, fixedProgress }: { auto: boolean; fixedProgress?: number }) {
+export interface SplatTuning {
+  scale?: number
+  disperse?: DisperseOpts
+}
+
+function SplatInner({
+  auto,
+  fixedProgress,
+  tuning,
+}: {
+  auto: boolean
+  fixedProgress?: number
+  tuning?: SplatTuning
+}) {
   const { camStatus, start } = useTracking()
   const [loaded, setLoaded] = useState(false)
   const started = camStatus === 'starting' || camStatus === 'ready'
@@ -17,7 +31,13 @@ function SplatInner({ auto, fixedProgress }: { auto: boolean; fixedProgress?: nu
         gl={{ antialias: false, alpha: true }}
         camera={{ fov: 50, position: [0, 0, 5] }}
       >
-        <SplatScene auto={auto} fixedProgress={fixedProgress} onLoaded={() => setLoaded(true)} />
+        <SplatScene
+          auto={auto}
+          fixedProgress={fixedProgress}
+          scale={tuning?.scale}
+          disperse={tuning?.disperse}
+          onLoaded={() => setLoaded(true)}
+        />
       </Canvas>
 
       {!loaded && (
@@ -45,15 +65,23 @@ function SplatInner({ auto, fixedProgress }: { auto: boolean; fixedProgress?: nu
  * `auto` (headless/?auto=1) runs the disperse without a camera; otherwise the
  * camera drives it via hand openness.
  */
-export function SplatMode({ auto = false, fixedProgress }: { auto?: boolean; fixedProgress?: number }) {
+export function SplatMode({
+  auto = false,
+  fixedProgress,
+  tuning,
+}: {
+  auto?: boolean
+  fixedProgress?: number
+  tuning?: SplatTuning
+}) {
   const headless = auto || fixedProgress != null
   return headless ? (
     <TrackingProvider preview={defaultGestureState()}>
-      <SplatInner auto={auto} fixedProgress={fixedProgress} />
+      <SplatInner auto={auto} fixedProgress={fixedProgress} tuning={tuning} />
     </TrackingProvider>
   ) : (
     <TrackingProvider>
-      <SplatInner auto={false} />
+      <SplatInner auto={false} tuning={tuning} />
     </TrackingProvider>
   )
 }

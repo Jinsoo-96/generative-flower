@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { SparkRenderer, SplatMesh } from '@sparkjsdev/spark'
 import { MathUtils } from 'three'
-import { makeDisperseModifier, type DisperseModifier } from './disperseModifier'
+import { makeDisperseModifier, type DisperseModifier, type DisperseOpts } from './disperseModifier'
 import { useTracking } from '../tracking/trackingContext'
 
 const SPLAT_URL = `${import.meta.env.BASE_URL}splat.ply`
@@ -23,15 +23,24 @@ interface SplatObjects {
 export function SplatScene({
   auto = false,
   fixedProgress,
+  scale = 2,
+  disperse,
   onLoaded,
 }: {
   auto?: boolean
   fixedProgress?: number
+  /** Splat world scale. */
+  scale?: number
+  /** Disperse modifier tuning (base/grow/spread/opacityBoost). */
+  disperse?: DisperseOpts
   onLoaded?: () => void
 }) {
   const gl = useThree((s) => s.gl)
   const scene = useThree((s) => s.scene)
   const { gestureRef } = useTracking()
+  // Capture tuning once at mount (URL-driven, constant per session) so the
+  // create-effect doesn't re-run (and reload the 17MB asset) on re-render.
+  const [tuning] = useState(() => ({ scale, disperse }))
 
   const objsRef = useRef<SplatObjects | null>(null)
   const progressDisp = useRef(0)
@@ -42,13 +51,13 @@ export function SplatScene({
 
   useEffect(() => {
     const spark = new SparkRenderer({ renderer: gl })
-    const disperse = makeDisperseModifier()
+    const disperse = makeDisperseModifier(tuning.disperse)
     const splat = new SplatMesh({ url: SPLAT_URL, onLoad: () => onLoadedRef.current?.() })
     splat.objectModifier = disperse.modifier
     splat.updateGenerator()
     // Place into our frame (PLY ~1-unit, origin-centered; flip for three axes).
     splat.position.set(0, 0, 0)
-    splat.scale.setScalar(2)
+    splat.scale.setScalar(tuning.scale)
     splat.rotation.set(Math.PI, 0, 0)
 
     scene.add(spark)
@@ -62,7 +71,7 @@ export function SplatScene({
       ;(spark as { dispose?: () => void }).dispose?.()
       objsRef.current = null
     }
-  }, [gl, scene])
+  }, [gl, scene, tuning])
 
   useFrame((state, dtRaw) => {
     const o = objsRef.current

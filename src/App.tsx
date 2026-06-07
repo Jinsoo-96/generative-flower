@@ -86,10 +86,20 @@ function App() {
     const q = new URLSearchParams(window.location.search)
     if (q.get('mode') === 'splat') {
       const p = Number(q.get('p'))
+      const num = (k: string) => (q.has(k) && Number.isFinite(Number(q.get(k))) ? Number(q.get(k)) : undefined)
       return (
         <SplatMode
           auto={q.get('auto') === '1'}
           fixedProgress={Number.isFinite(p) && q.has('p') ? p : undefined}
+          tuning={{
+            scale: num('scale'),
+            disperse: {
+              base: num('base'),
+              grow: num('grow'),
+              spread: num('spread'),
+              opacityBoost: num('ob'),
+            },
+          }}
         />
       )
     }
