@@ -7,7 +7,7 @@ import { useTracking } from '../tracking/trackingContext'
 
 const SPLAT_URL = `${import.meta.env.BASE_URL}splat.spz` // compressed (3.4MB vs 17.8MB)
 const ROT_GAIN = 2.5 // hand-roll → model-yaw (left/right) amplification
-const PITCH_GAIN = 1.8 // hand-height → model-pitch (see top/bottom) amplification
+const PITCH_GAIN = 3 // hand-tilt angle → model-pitch (top/bottom) amplification
 
 interface SplatObjects {
   spark: SparkRenderer
@@ -39,7 +39,7 @@ export function SplatScene({
 }) {
   const gl = useThree((s) => s.gl)
   const scene = useThree((s) => s.scene)
-  const { gestureRef } = useTracking()
+  const { gestureRef, lastResultRef } = useTracking()
   // Capture tuning once at mount (URL-driven, constant per session) so the
   // create-effect doesn't re-run (and reload the 17MB asset) on re-render.
   const [tuning] = useState(() => ({ scale, disperse }))
@@ -99,19 +99,24 @@ export function SplatScene({
     // Without this the splats stay baked from the first frame (static image).
     o.splat.generatorDirty = true
 
-    // Two-axis orbit to inspect the model (independent of disperse — hold a fist
-    // and move to turn the original):
-    //   hand roll        → yaw   (spin left/right to see the sides)
-    //   hand height (y)  → pitch (raise to see the top, lower to see the bottom)
+    // Two-axis orbit by ROTATING the hand (not moving it), independent of disperse:
+    //   twist hand (roll)            → yaw   (spin left/right to see the sides)
+    //   tilt hand fwd/back (z depth) → pitch (tip fingers toward camera → top/bottom)
     let yawTarget = 0
     let pitchTarget = 0
-    if (fixedProgress == null && !auto && gestureRef.current.detected) {
-      const g = gestureRef.current
-      yawTarget = -g.rotation * ROT_GAIN
-      pitchTarget = -(g.position.y - 0.5) * PITCH_GAIN
+    const lm = lastResultRef.current?.landmarks?.[0]
+    if (fixedProgress == null && !auto && gestureRef.current.detected && lm) {
+      yawTarget = -gestureRef.current.rotation * ROT_GAIN
+      // Pitch from the wrist(0)→middle-MCP(9) tilt out of the image plane (z).
+      const w = lm[0]
+      const m = lm[9]
+      const planar = Math.hypot(m.x - w.x, m.y - w.y) || 1e-3
+      const tilt = Math.atan2(-((m.z ?? 0) - (w.z ?? 0)), planar)
+      pitchTarget = tilt * PITCH_GAIN
     }
     yawDisp.current = MathUtils.damp(yawDisp.current, yawTarget, 5, dt)
-    pitchDisp.current = MathUtils.damp(pitchDisp.current, pitchTarget, 5, dt)
+    // Pitch from z-depth is noisier → smooth a bit more (lower rate).
+    pitchDisp.current = MathUtils.damp(pitchDisp.current, pitchTarget, 3.5, dt)
     o.splat.rotation.y = yawDisp.current
     o.splat.rotation.x = Math.PI + pitchDisp.current // Math.PI = base PLY→three flip
   })
