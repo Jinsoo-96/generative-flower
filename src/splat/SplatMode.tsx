@@ -4,6 +4,7 @@ import { TrackingProvider } from '../tracking/TrackingProvider'
 import { useTracking } from '../tracking/trackingContext'
 import { defaultGestureState } from '../gestures/types'
 import { ModeSwitch } from '../ui/ModeSwitch'
+import { DebugOverlay } from '../ui/DebugOverlay'
 import { SplatScene } from './SplatScene'
 import type { DisperseOpts } from './disperseModifier'
 
@@ -41,6 +42,9 @@ function SplatInner({
         />
       </Canvas>
 
+      {/* Hosts the shared <video> (so the webcam actually attaches) + shows the
+          hand-tracking PiP once the camera is on. Only in interactive mode. */}
+      {!auto && fixedProgress == null && <DebugOverlay visible={started} />}
       {!auto && fixedProgress == null && <ModeSwitch current="splat" />}
 
       {!loaded && (
