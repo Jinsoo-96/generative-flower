@@ -92,6 +92,9 @@ export function SplatScene({
     }
     progressDisp.current = MathUtils.damp(progressDisp.current, target, 4, dt)
     o.disperse.progress.value = progressDisp.current
+    // The objectModifier is only re-evaluated when the generator is marked dirty.
+    // Without this the splats stay baked from the first frame (static image).
+    o.splat.generatorDirty = true
   })
 
   return null
