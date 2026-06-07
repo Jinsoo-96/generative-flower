@@ -38,7 +38,7 @@ export function makeDisperseModifier(o: DisperseOpts = {}): DisperseModifier {
   // (shape-preserving) — this asset's native opacity is ~0.1–3%.
   const BASE = dyno.dynoFloat(o.base ?? 1) // native scale when gathered
   const GROW = dyno.dynoFloat(o.grow ?? 3) // extra scale at full disperse
-  const OPACITY_BOOST = dyno.dynoFloat(o.opacityBoost ?? 18)
+  const OPACITY_BOOST = dyno.dynoFloat(o.opacityBoost ?? 22)
 
   const modifier = dyno.dynoBlock(
     { gsplat: dyno.Gsplat },

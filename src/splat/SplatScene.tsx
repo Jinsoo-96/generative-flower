@@ -86,11 +86,10 @@ export function SplatScene({
       target = 0.5 - 0.5 * Math.cos(state.clock.elapsedTime * 0.8)
     } else {
       const g = gestureRef.current
-      // Hand: fingers spread → disperse. No hand: gentle drift in the visible
-      // range so the (default) landing always reads as living smoke.
-      target = g.detected
-        ? g.fingerCount / 5
-        : 0.4 + 0.2 * Math.sin(state.clock.elapsedTime * 0.5)
+      // Binary, no middle stage: fist → gathered original, open hand → fog.
+      // When the hand isn't tracked (e.g. briefly while rotating), settle to
+      // gathered so it never drifts into fog on its own (isFist is robust to roll).
+      target = g.detected ? (g.isFist ? 0 : 1) : 0
     }
     progressDisp.current = MathUtils.damp(progressDisp.current, target, 4, dt)
     o.disperse.progress.value = progressDisp.current
