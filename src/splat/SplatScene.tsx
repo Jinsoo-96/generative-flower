@@ -6,6 +6,7 @@ import { makeDisperseModifier, type DisperseModifier, type DisperseOpts } from '
 import { useTracking } from '../tracking/trackingContext'
 
 const SPLAT_URL = `${import.meta.env.BASE_URL}splat.spz` // compressed (3.4MB vs 17.8MB)
+const ROT_GAIN = 2.5 // hand-roll → model-yaw amplification
 
 interface SplatObjects {
   spark: SparkRenderer
@@ -44,6 +45,7 @@ export function SplatScene({
 
   const objsRef = useRef<SplatObjects | null>(null)
   const progressDisp = useRef(0)
+  const yawDisp = useRef(0)
   const onLoadedRef = useRef(onLoaded)
   useEffect(() => {
     onLoadedRef.current = onLoaded
@@ -95,6 +97,15 @@ export function SplatScene({
     // The objectModifier is only re-evaluated when the generator is marked dirty.
     // Without this the splats stay baked from the first frame (static image).
     o.splat.generatorDirty = true
+
+    // Hand roll → turntable yaw, so you can spin the model to inspect it.
+    // (Independent of disperse: hold a fist and roll to turn the original.)
+    let yawTarget = 0
+    if (fixedProgress == null && !auto && gestureRef.current.detected) {
+      yawTarget = -gestureRef.current.rotation * ROT_GAIN
+    }
+    yawDisp.current = MathUtils.damp(yawDisp.current, yawTarget, 5, dt)
+    o.splat.rotation.y = yawDisp.current
   })
 
   return null
