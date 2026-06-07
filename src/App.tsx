@@ -6,6 +6,7 @@ import { Stage } from './scene/Stage'
 import { DebugOverlay } from './ui/DebugOverlay'
 import { Onboarding } from './ui/Onboarding'
 import { HUD } from './ui/HUD'
+import { ModeSwitch } from './ui/ModeSwitch'
 import { speciesForFingerCount, type SpeciesName } from './scene/flowerGeometry'
 import { TONE } from './config'
 import type { GestureState } from './gestures/types'
@@ -60,6 +61,7 @@ function Scene() {
   return (
     <main className="app-stage">
       <Stage bloomEnabled={bloomEnabled} />
+      <ModeSwitch current="flower" />
       {/* Always mounted (hosts the shared <video>); only visually toggled. */}
       <DebugOverlay visible={showDebug} />
       {ready && (
