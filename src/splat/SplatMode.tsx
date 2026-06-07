@@ -46,7 +46,7 @@ function SplatInner({
       {!loaded && (
         <div className="start-card">
           <div className="spinner" aria-label="loading" />
-          <p className="muted">splat 로딩 중… (≈17MB, 첫 진입만)</p>
+          <p className="muted">splat 로딩 중… (≈3.4MB, 첫 진입만)</p>
         </div>
       )}
 

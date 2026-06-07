@@ -5,7 +5,7 @@ import { MathUtils } from 'three'
 import { makeDisperseModifier, type DisperseModifier, type DisperseOpts } from './disperseModifier'
 import { useTracking } from '../tracking/trackingContext'
 
-const SPLAT_URL = `${import.meta.env.BASE_URL}splat.ply`
+const SPLAT_URL = `${import.meta.env.BASE_URL}splat.spz` // compressed (3.4MB vs 17.8MB)
 
 interface SplatObjects {
   spark: SparkRenderer
