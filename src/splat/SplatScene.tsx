@@ -6,7 +6,8 @@ import { makeDisperseModifier, type DisperseModifier, type DisperseOpts } from '
 import { useTracking } from '../tracking/trackingContext'
 
 const SPLAT_URL = `${import.meta.env.BASE_URL}splat.spz` // compressed (3.4MB vs 17.8MB)
-const ROT_GAIN = 2.5 // hand-roll → model-yaw amplification
+const ROT_GAIN = 2.5 // hand-roll → model-yaw (left/right) amplification
+const PITCH_GAIN = 1.8 // hand-height → model-pitch (see top/bottom) amplification
 
 interface SplatObjects {
   spark: SparkRenderer
@@ -46,6 +47,7 @@ export function SplatScene({
   const objsRef = useRef<SplatObjects | null>(null)
   const progressDisp = useRef(0)
   const yawDisp = useRef(0)
+  const pitchDisp = useRef(0)
   const onLoadedRef = useRef(onLoaded)
   useEffect(() => {
     onLoadedRef.current = onLoaded
@@ -97,14 +99,21 @@ export function SplatScene({
     // Without this the splats stay baked from the first frame (static image).
     o.splat.generatorDirty = true
 
-    // Hand roll → turntable yaw, so you can spin the model to inspect it.
-    // (Independent of disperse: hold a fist and roll to turn the original.)
+    // Two-axis orbit to inspect the model (independent of disperse — hold a fist
+    // and move to turn the original):
+    //   hand roll        → yaw   (spin left/right to see the sides)
+    //   hand height (y)  → pitch (raise to see the top, lower to see the bottom)
     let yawTarget = 0
+    let pitchTarget = 0
     if (fixedProgress == null && !auto && gestureRef.current.detected) {
-      yawTarget = -gestureRef.current.rotation * ROT_GAIN
+      const g = gestureRef.current
+      yawTarget = -g.rotation * ROT_GAIN
+      pitchTarget = -(g.position.y - 0.5) * PITCH_GAIN
     }
     yawDisp.current = MathUtils.damp(yawDisp.current, yawTarget, 5, dt)
+    pitchDisp.current = MathUtils.damp(pitchDisp.current, pitchTarget, 5, dt)
     o.splat.rotation.y = yawDisp.current
+    o.splat.rotation.x = Math.PI + pitchDisp.current // Math.PI = base PLY→three flip
   })
 
   return null
