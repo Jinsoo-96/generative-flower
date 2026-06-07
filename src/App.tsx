@@ -84,39 +84,20 @@ function Scene() {
 }
 
 function App() {
-  // ?mode=splat → standalone Gaussian-splat disperse mode (?auto=1 = no camera).
-  if (typeof window !== 'undefined') {
-    const q = new URLSearchParams(window.location.search)
-    if (q.get('mode') === 'splat') {
-      const p = Number(q.get('p'))
-      const num = (k: string) => (q.has(k) && Number.isFinite(Number(q.get(k))) ? Number(q.get(k)) : undefined)
-      return (
-        <Suspense
-          fallback={
-            <main className="start-card">
-              <div className="spinner" aria-label="loading" />
-              <p className="muted">splat 모드 로딩 중…</p>
-            </main>
-          }
-        >
-          <SplatMode
-            auto={q.get('auto') === '1'}
-            fixedProgress={Number.isFinite(p) && q.has('p') ? p : undefined}
-            tuning={{
-              scale: num('scale'),
-              disperse: {
-                base: num('base'),
-                grow: num('grow'),
-                spread: num('spread'),
-                opacityBoost: num('ob'),
-              },
-            }}
-          />
-        </Suspense>
-      )
-    }
-  }
+  const q =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams()
 
+  // The Gaussian-splat disperse experience is the main entry (root). The flower
+  // app stays reachable at ?mode=flower; its tone preview at ?preview=1.
+  if (q.get('mode') === 'flower') {
+    return (
+      <TrackingProvider>
+        <Scene />
+      </TrackingProvider>
+    )
+  }
   const preview = previewGesture()
   if (preview) {
     return (
@@ -127,10 +108,33 @@ function App() {
       </TrackingProvider>
     )
   }
+
+  // Default → splat mode (?auto=1 = no-camera oscillation; ?p= fixed; tuning knobs).
+  const p = Number(q.get('p'))
+  const num = (k: string) => (q.has(k) && Number.isFinite(Number(q.get(k))) ? Number(q.get(k)) : undefined)
   return (
-    <TrackingProvider>
-      <Scene />
-    </TrackingProvider>
+    <Suspense
+      fallback={
+        <main className="start-card">
+          <div className="spinner" aria-label="loading" />
+          <p className="muted">로딩 중…</p>
+        </main>
+      }
+    >
+      <SplatMode
+        auto={q.get('auto') === '1'}
+        fixedProgress={Number.isFinite(p) && q.has('p') ? p : undefined}
+        tuning={{
+          scale: num('scale'),
+          disperse: {
+            base: num('base'),
+            grow: num('grow'),
+            spread: num('spread'),
+            opacityBoost: num('ob'),
+          },
+        }}
+      />
+    </Suspense>
   )
 }
 
