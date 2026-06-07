@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import './styles.css'
 import { TrackingProvider } from './tracking/TrackingProvider'
 import { useTracking } from './tracking/trackingContext'
@@ -9,6 +9,10 @@ import { HUD } from './ui/HUD'
 import { speciesForFingerCount, type SpeciesName } from './scene/flowerGeometry'
 import { TONE } from './config'
 import type { GestureState } from './gestures/types'
+
+// Code-split the Gaussian-splat mode (Spark ~5MB) so the flower app never
+// downloads it — only loaded when entering ?mode=splat.
+const SplatMode = lazy(() => import('./splat/SplatMode').then((m) => ({ default: m.SplatMode })))
 
 /**
  * ?preview=1 → static tone view (no camera/model). Optional ?fingers=1|2|3
@@ -80,6 +84,39 @@ function Scene() {
 }
 
 function App() {
+  // ?mode=splat → standalone Gaussian-splat disperse mode (?auto=1 = no camera).
+  if (typeof window !== 'undefined') {
+    const q = new URLSearchParams(window.location.search)
+    if (q.get('mode') === 'splat') {
+      const p = Number(q.get('p'))
+      const num = (k: string) => (q.has(k) && Number.isFinite(Number(q.get(k))) ? Number(q.get(k)) : undefined)
+      return (
+        <Suspense
+          fallback={
+            <main className="start-card">
+              <div className="spinner" aria-label="loading" />
+              <p className="muted">splat 모드 로딩 중…</p>
+            </main>
+          }
+        >
+          <SplatMode
+            auto={q.get('auto') === '1'}
+            fixedProgress={Number.isFinite(p) && q.has('p') ? p : undefined}
+            tuning={{
+              scale: num('scale'),
+              disperse: {
+                base: num('base'),
+                grow: num('grow'),
+                spread: num('spread'),
+                opacityBoost: num('ob'),
+              },
+            }}
+          />
+        </Suspense>
+      )
+    }
+  }
+
   const preview = previewGesture()
   if (preview) {
     return (
